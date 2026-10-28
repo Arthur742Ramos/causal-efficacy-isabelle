@@ -1,0 +1,6 @@
+session Causal_Efficacy_Patterns = Causal_Efficacy_Determination +
+  options [document = false, timeout = 300]
+  sessions
+    Causal_Efficacy_Grounded
+  theories
+    Causal_Efficacy_Patterns

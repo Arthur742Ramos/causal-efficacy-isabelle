@@ -1,0 +1,4 @@
+session Source_Sharing_Spines = Causal_Efficacy_Contexts +
+  options [document = false, timeout = 600]
+  theories
+    Source_Sharing_Spines

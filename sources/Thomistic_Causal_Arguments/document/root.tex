@@ -1,0 +1,417 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{isabelle,isabellesym}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage[hidelinks,bookmarksopen=true]{hyperref}
+
+\urlstyle{rm}
+\isabellestyle{it}
+\setlength{\emergencystretch}{3em}
+
+\begin{document}
+
+\title{Foundations and Limits of Essentially Ordered Causal Regress Arguments}
+\author{Arthur F. Ramos \and David Barros Hulak \and Ruy J. G. B. de Queiroz}
+\maketitle
+
+\begin{abstract}
+This entry formalizes a carrier-restricted theory of causal and grounding
+regress arguments in Isabelle/HOL.  It distinguishes acyclicity,
+well-foundedness, explicit chain termination, local foundation, global
+foundation, and full grounding, and proves the implications that hold between
+them together with finite and infinite separation models.  An executable finite
+checker returns either an exact independent-root certificate or a concrete
+missing-foundation witness, with kernel-checked correctness theorems.  The
+entry also formalizes a bounded cycle analyzer with explicit finite return-path
+certificates,
+a certified finite profile linking five declarative properties to two executable
+tests, and premise-deletion countermodels
+for the Romero--Pérez and Cohoe-style packages.  It formalizes two explicit
+Second-Way reconstructions: a Cohoe-style reconstruction in which an
+essentially ordered-series explication, explicit foundation, and bridge
+conditions yield a non-derivative first cause, and a Romero--Pérez-style
+  well-founded reconstruction with its exact independent-member conclusion.  The
+  results are conditional on stated dependency premises; no theorem identifies a
+  formal first cause with God, and the substantive application is deliberately
+  focused on the Second Way.
+\end{abstract}
+
+\section{Contribution and scope}
+
+The phrase \lq\lq there must be a first cause'' compresses several distinct
+claims.  Acyclicity need not be well-foundedness; a selected target may have a
+foundation while the whole relation is non-terminating; and global foundation
+uses a set of independent supporters, not a singleton first-cause claim.  This
+entry makes those distinctions explicit and mechanically checkable.
+
+Its contribution is a compact package of four layers:
+
+\begin{enumerate}
+\item a carrier-restricted interface for dependence, ancestry, grounding,
+  independence, and first causes;
+\item an implication/separation atlas for acyclicity, termination, and
+  local/global foundation;
+\item executable finite certificates for independent roots, missing
+  foundations, and closed cycle paths; and
+\item source-oriented Second-Way formal explications with premise-deletion
+  countermodels.
+\end{enumerate}
+
+All conclusions are conditional on stated relation-theoretic assumptions.  The
+entry does not assert that a physical or metaphysical domain is well-founded,
+or identify any formal first cause with God.  It deliberately does not attempt
+the First or Third Ways: substantive treatments would require richer
+act/potency and modal semantics beyond this relation-theoretic scope.
+
+\section{Formal interface}
+
+Fix a type of entities, a carrier \(C\), and an immediate-dependence relation
+\(D\).  The relation is read as \lq\lq \(x\) is an immediate essential cause,
+ground, or actualizer of \(y\).''  The project uses carrier-restricted
+predicates:
+
+\[
+  D_C(x,y) \mathrel{\equiv} x\in C \land y\in C \land D\,x\,y.
+\]
+
+The predicate \texttt{dependency\_ancestor} is the carrier-restricted
+reflexive-transitive closure of immediate dependence, while
+\texttt{grounded\_in} records an immediate predecessor.  Independence means
+that no such predecessor exists; \texttt{first\_member\_in} and
+\texttt{first\_cause\_in} add reachability and the required non-identity
+condition.  The interface is neutral about whether \(D\) means efficient
+causation, grounding, or actualization.
+
+\section{Foundation principles}
+
+The entry formalizes the following predicates.
+
+\begin{center}
+\begin{tabular}{@{}p{.25\linewidth}p{.64\linewidth}@{}}
+\toprule
+\textbf{Predicate} & \textbf{Formal content} \\
+\midrule
+\texttt{acyclic\_on} & no nonempty dependency cycle lies in the carrier; \\
+\texttt{well\_founded\_on} & every nonempty carrier subset has a minimal member; \\
+\texttt{chain\_terminating\_on} & every infinite dependency chain in the carrier is impossible; \\
+\texttt{local\_foundation\_on} & every immediately grounded target in a selected set has a reachable independent member; \\
+\texttt{global\_foundation\_on} & a designated set of independent members supports every grounded target in a selected set; \\
+\texttt{full\_foundation\_on} & every partially grounded target in the selected set has a full ground contained in a common independent foundation set. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The local and global predicates are weaker than well-foundedness: they concern
+selected targets and do not quantify over every nonempty subset.  In particular,
+\texttt{global\_foundation\_on} is witnessed by a set \(F\) of independent
+members; it is not a claim that there is one unique common first cause.  Full
+grounding remains distinct from partial grounding.
+
+The headline hierarchy is summarized below.  The last two rows are strict
+separations, not additional assumptions.
+
+\begin{center}
+\small
+\begin{tabular}{@{}p{.38\linewidth}p{.52\linewidth}@{}}
+\toprule
+\textbf{Checked relation} & \textbf{Scope and witness} \\
+\midrule
+\(\mathrm{WF}\Longleftrightarrow\mathrm{CT}\) & unrestricted equivalence of
+  well-foundedness and chain termination; \\
+\(\mathrm{WF}\Longrightarrow\mathrm{AC}\) & unrestricted implication to
+  acyclicity; \\
+\(\mathrm{WF}\Longrightarrow\mathrm{LF}\); for \(R\subseteq C\),
+  \(\mathrm{LF}\Longleftrightarrow\mathrm{GF}\) &
+  well-foundedness implies local foundation without extra coverage; the
+  local/global collapse requires carrier coverage; \\
+\(\mathrm{AC}\Longleftrightarrow\mathrm{WF}\Longleftrightarrow\mathrm{CT}
+  \Longrightarrow\mathrm{LF}\); for \(R\subseteq C\),
+  \(\mathrm{LF}\Longleftrightarrow\mathrm{GF}\) &
+  finite carrier; the rooted-cycle model refutes the final converse; \\
+\(\mathrm{AC}\not\Longrightarrow\mathrm{WF},\mathrm{LF}\) & integer
+  predecessor model; \\
+\(\mathrm{LF},\mathrm{GF}\not\Longrightarrow\mathrm{AC}\) & finite
+  rooted-cycle model. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Implication and separation atlas}
+
+The theorem \texttt{foundation\_implication\_atlas} collects the positive
+implications and names the bridge assumptions needed to convert full grounding
+into a local first-cause conclusion: target presence, target-set nonemptiness,
+and ancestry coverage.  None is hidden in a simp rule.
+
+\subsection{Infinite separation models}
+
+The integer predecessor model is acyclic and gives every integer a predecessor,
+but has no independent member.  The pedestal model has a foundation set while
+remaining non-well-founded.  The finite rooted-cycle model has foundation for
+selected targets while retaining a separate cycle.  The paired model separates
+partial from full grounding.  These are executable Isabelle/HOL models used by
+the Second-Way comparison layer, not informal diagrams.
+
+\section{Executable finite checker}
+
+\texttt{Finite\_Foundation\_Checker.thy} represents a finite model by a
+\texttt{nat list} of vertices and ordered edge pairs, then derives the carrier,
+relation, bounded reachability, grounding, and independence predicates.  The
+path recursion is proved sound and complete under the finite-list invariant.
+
+The executable function \texttt{finite\_foundation\_result} returns one of two
+constructors:
+
+\begin{center}
+\begin{tabular}{@{}p{.42\linewidth}p{.49\linewidth}@{}}
+\toprule
+\textbf{Result} & \textbf{Meaning} \\
+\midrule
+\texttt{Foundation\_Certificate xs} &
+\texttt{xs} is exactly the list of independent vertices in the checked
+carrier, and its set is proved to be a \texttt{foundation\_set\_for}; \\
+\texttt{Missing\_Foundation\_Certificate x} &
+\texttt{x} is a concrete carrier vertex that is grounded but has no reachable
+independent member. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The correctness theorems connect the result with
+\texttt{finite\_foundation\_check}, identify the positive payload with the
+exact independent-root set, and certify the negative witness.  Regression
+models cover a finite chain and directed cycle; the checker is therefore a
+small certified assay, not an appeal to an external graph library.
+
+\subsection{Cycle certificates and the finite profile}
+
+\texttt{Finite\_Foundation\_Analysis.thy} adds a second executable result
+type.  \texttt{No\_Cycle\_Certificate} is returned exactly when the
+carrier-restricted relation is acyclic.  Otherwise
+\texttt{Cycle\_Certificate x xs} returns a carrier vertex \(x\) together with a
+nonempty finite path list \(xs\) for which the formal transitive closure
+contains a return path
+\[
+  D_C^{+}(x,x).
+\]
+The certificate theorem checks the closed \texttt{rtrancl\_path} represented by
+\(xs\), rather than returning only an endpoint.  The internal search is bounded
+by the listed vertices; the emitted path is at most one longer because it
+prepends the first edge's endpoint.  This is proved by
+\texttt{finite\_cycle\_result\_cycle\_length}.
+
+The exported \texttt{finite\_foundation\_profile} packages five Boolean
+answers, computed by two executable tests:
+\[
+(\text{acyclic},\text{well-founded},\text{chain-terminating},
+  \text{local-foundation},\text{global-foundation}).
+\]
+The theorem \texttt{finite\_foundation\_profile\_correct} proves equality with
+the declarative tuple for every finite input model.  Thus the profile exposes
+the finite collapse at the executable API boundary while making clear that
+acyclicity, well-foundedness, and chain termination share one cycle test, and
+local and global foundation share one foundation test.
+
+\section{Two explicit Second-Way reconstructions}
+
+The source comparison is guided by the literature on essentially ordered
+causal series.  Cohoe's analysis emphasizes that Aquinas's argument concerns a
+series whose later members derive their causal power from earlier members
+\cite{Cohoe2013}.  Romero and Pérez present a first-order reconstruction whose
+formal source-level conclusion is the existence of an uncaused entity, while
+warning against silently adding uniqueness or a universe-cause conclusion
+\cite{RomeroPerez2012}.
+
+\subsection{Source-to-formal premise map}
+
+The following table separates source-level commitments from the Isabelle
+encoding.  In particular, the bridge conditions are recorded as formal
+translation assumptions, not presented as quotations from the philosophical
+literature.
+
+\begin{center}
+\small
+\begin{tabular}{@{}p{.22\linewidth}p{.39\linewidth}p{.29\linewidth}@{}}
+\toprule
+\textbf{Source focus} & \textbf{Formal counterpart} & \textbf{Role in the result}\\
+\midrule
+Cohoe: an essentially ordered causal series
+  \cite{Cohoe2013} &
+\texttt{essentially\_ordered\_series}, with a derivative predicate and a
+carrier-restricted immediate relation &
+An explicit explication; it is not identified with well-foundedness.\\
+Cohoe: foundation of the selected series &
+\texttt{full\_foundation\_on} plus endpoint, nonemptiness, and ancestry
+bridges &
+Supplies the binary foundation conclusion only under stated translation
+assumptions.\\
+Romero--Pérez: caused items and predecessor coverage
+  \cite{RomeroPerez2012} &
+Existence, carrier, and predecessor premises in
+\texttt{romero\_perez\_second\_way\_premises} &
+Feeds the per-target first-cause theorem.\\
+Romero--Pérez: no infinite descent &
+\texttt{well\_founded\_on} in Isabelle/HOL &
+The stronger global HOL explication of the source's target-oriented
+no-infinite-descent premise; its deletion is witnessed by the integer
+predecessor model.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Cohoe-style essential ordering}
+
+The definition \texttt{essentially\_ordered\_series} requires, for a chosen
+target, an explicit derivative predicate and an immediate dependency
+predecessor.  More importantly, on the selected ancestry it proves the
+equivalence
+\[
+\texttt{derivative}(x)\ \longleftrightarrow\
+\texttt{grounded\_in}(C,D,x).
+\]
+This equivalence is the development's explicit formal explication of one
+reading of derivative efficacy; it is not asserted as a metaphysical identity
+between every sense of being caused and every sense of possessing causal
+power.  Under that explication, the first member of a founded series is
+formally non-derivative rather than merely receiving a free source annotation.
+The predicate is still not a synonym for well-foundedness: the integer
+predecessor model satisfies the essential-ordering interface while remaining
+non-well-founded.  The locale
+\texttt{cohoe\_second\_way\_reconstruction} adds the formal translation
+conditions needed to obtain the exact conclusion: independent foundation,
+singleton endpoint, nonemptiness, and full-ancestry bridges.  These are formal
+explications of the source claims, not literal quotations:
+
+\[
+\text{a caused target has a non-derivative first cause in the selected carrier}.
+\]
+
+The conclusion is intentionally not \lq\lq God exists.''  It is a first-cause
+statement in the typed relation-and-carrier interface.
+
+\subsection{An auxiliary bounded stress test for local causal efficacy}
+
+As an auxiliary stress test, the development introduces a deliberately
+explicit local support interface.  It requires an immediate cause to exercise
+a power possessed by an earlier supporter.  On the integer predecessor model,
+the possession and exercise predicates are instantiated by the constantly true
+predicates.  The resulting theorem shows that this precise local
+support/transmission condition is insufficient to exclude an infinite regress,
+even alongside acyclicity and the formal essential-ordering interface.  It is
+not a substantive semantics of derivative causal efficacy, nor a claim that
+every possible metaphysical theory fails to exclude such a regress; its role is
+to mark the exact boundary of this deliberately weak interface.
+
+\subsection{Romero--Pérez reconstruction}
+
+The locale \texttt{romero\_perez\_second\_way\_reconstruction} formalizes the
+following package: at least one caused entity exists; caused entities lie in the
+selected carrier; every caused entity has a carrier predecessor; and the
+carrier-restricted relation is well-founded.  We represent the source's
+prohibition of an infinite regress resulting in a particular item by the
+stronger global HOL condition \texttt{well\_founded\_on}, rather than by a
+target-relative sentence.  The phrase \lq\lq first-order'' describes the source
+presentation, not this Isabelle/HOL encoding: \texttt{well\_founded\_on}
+quantifies over carrier subsets.  Its exact headline conclusion is
+
+\[
+\exists x\in C.\ \texttt{independent\_in}\ C\ D\ x.
+\]
+
+For a specified caused target the locale also derives a first cause.  It does
+not add uniqueness, necessity, a cause of the universe, or a theological
+identity principle.  Its conditions are source-oriented formal assumptions;
+the separate premise theory supplies the one-premise-at-a-time countermodel
+atlas.
+
+\subsection{Premise factorisation and deletion certificates}
+
+\texttt{Premise\_Minimality.thy} factors the Romero--Pérez formal package into
+four conditions: existence, carrier membership, predecessor coverage, and
+well-foundedness.  Four deletion theorems retain the others and refute one
+fixed combined conclusion: a global independent-support set together with a
+first cause for every caused item.  The empty, finite, and integer models
+delete these conditions one at a time.
+
+The Cohoe-style translation package uses existence, the formal
+essential-ordering explication, full foundation, and three bridges from full
+grounding to binary dependence.  Isabelle proves that a separate carrier
+condition is redundant because the explication is carrier-restrictive.  Six
+deletion theorems refute the formal non-derivative conclusion with small,
+inspectable models.  These are minimality results for the encoding, not claims
+that the literature has only one interpretation of a source claim.
+
+\section{Related work and limitations}
+
+The formal motivation is Aquinas's \emph{Summa Theologiae}~\cite{AquinasST}.
+Cohoe and Romero--Pérez motivate the two source-oriented reconstructions, while
+Dixon, Pearson, Bliss, and Rabin--Rabern motivate the distinctions between
+grounding, termination, and vicious regress
+\cite{Cohoe2013,RomeroPerez2012,Dixon2016,Pearson2023,Bliss2014,RabinRabern2016}.
+Prior mechanized philosophical theology provides a precedent for separating a
+checked logical core from interpretation~\cite{BenzmuellerPaleo2013}.
+
+The formal contribution is comparative rather than a claim to replace these
+source discussions.  The cited philosophical analyses do not supply the
+carrier-restricted Isabelle/HOL lattice proved here, its finite and infinite
+separation models, or executable certificates whose payloads are connected to
+the declarative predicates by kernel-checked theorems.  Cohoe's essentially
+ordered series and Romero--Pérez's no-infinite-descent premise are therefore
+used as distinct source-oriented inputs to formal explications; the additional
+carrier, ancestry, endpoint, and grounding bridges are exposed as translation
+assumptions.  The result is a mechanically inspectable comparison of what
+follows from those choices, not a claim that the formal vocabulary exhausts
+the metaphysics of causation or grounding.
+
+The entry does not formalize empirical causal truth, Aristotelian act and
+potency, modal semantics, or the theological identity of a first cause.  It
+formalizes consequences of stated relation-theoretic conditions and exhibits
+countermodels when a condition is weakened.  All definitions, theorem
+statements, proofs, executable examples, and explanatory material needed to
+understand the contribution are contained in this AFP entry.
+
+\subsection{Logical background}
+
+The development is carried out in classical Isabelle/HOL.  In particular, the
+standard library equivalence between well-foundedness and the absence of an
+infinite descending chain is used in
+\texttt{well\_founded\_iff\_chain\_terminating}; the encoding is therefore not a
+first-order theory and does not claim first-order completeness.  The theorem
+statements expose the relevant set and sequence quantification instead of
+concealing it behind the phrase \lq\lq no infinite regress''.
+
+\section{Reproducibility}
+
+The Isabelle session is built with
+\[
+\texttt{isabelle build -D . Thomistic\_Causal\_Arguments}.
+\]
+For proof-only iteration, use
+\texttt{isabelle build -o document=false -D . Thomistic\_Causal\_Arguments}.
+The repository-level audit additionally checks the AFP layout, forbidden proof
+tokens, stray generated artifacts, and headline theorem counts.  The
+Blueprint file records the dependency DAG and the proved foundation/Second-Way
+core.
+
+\section{Conclusion}
+
+The result is deliberately narrower than a theological proof: once the
+relation, carrier, and foundation conditions are explicit, Isabelle verifies
+the hierarchy, certificates, countermodels, and source distinctions.  That
+combination is the contribution of the entry.
+
+\tableofcontents
+
+\sloppy
+\input{session}
+\fussy
+
+\bibliographystyle{abbrv}
+\bibliography{root}
+
+\end{document}

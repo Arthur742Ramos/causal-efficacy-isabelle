@@ -1,0 +1,4 @@
+session Causal_Efficacy_Ancestors = Causal_Efficacy_Extension +
+  options [document = false, timeout = 300]
+  theories
+    Target_Ancestral_Cone

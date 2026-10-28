@@ -1,0 +1,4 @@
+session Causal_Efficacy_Grounded = Causal_Efficacy_Contexts +
+  options [document = false, timeout = 300]
+  theories
+    Causal_Efficacy_Grounded

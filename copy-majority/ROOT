@@ -1,0 +1,3 @@
+session Copy_Majority_Representation = Causal_Efficacy_Contexts +
+  options [document = false, timeout = 300]
+  theories Copy_Majority_Representation

@@ -1,0 +1,9 @@
+chapter AFP
+
+session Thomistic_Causal_Arguments = "HOL-Library" +
+  options [document = pdf, timeout = 300]
+  theories
+    Thomistic_Causal_Arguments
+  document_files
+    "root.tex"
+    "root.bib"
